@@ -1,0 +1,9 @@
+port: ${PORT}
+
+database:
+  host: ${DATABASE_HOST}
+  port: ${DATABASE_PORT}
+  user: ${DATABASE_USER}
+  name: ${DATABASE_NAME}
+  pass: ${DATABASE_PASS}
+  ssl: ${DATABASE_SSL}

@@ -1,0 +1,1 @@
+ALTER TABLE "users" ADD CONSTRAINT "users_api_key_unique" UNIQUE("api_key");
