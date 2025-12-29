@@ -22,9 +22,22 @@ interface EnvSchemaField {
 
 type EnvSchema = Record<string, EnvSchemaField>;
 
+type ValidationStatus = 'pass' | 'fail';
+
 interface ValidationError {
   key: string;
   message: string;
+}
+
+interface ValidationWarning {
+  key: string;
+  message: string;
+}
+
+export interface ValidationResults {
+  status: ValidationStatus;
+  errors: ValidationError[];
+  warnings: ValidationWarning[];
 }
 
 @Injectable()
@@ -141,9 +154,10 @@ export class ProjectService {
   private validateEnvAgainstSchema(
     env: string,
     schema: EnvSchema,
-  ): ValidationError[] {
+  ): ValidationResults {
     const parsedEnv = this.parseEnv(env);
     const errors: ValidationError[] = [];
+    const warnings: ValidationWarning[] = [];
 
     for (const [key, rules] of Object.entries(schema)) {
       const value = parsedEnv[key];
@@ -154,6 +168,15 @@ export class ProjectService {
         errors.push({
           key,
           message: `Missing required field ${key}`,
+        });
+        continue;
+      }
+
+      // Check optional env missing
+      if (!required && value === undefined) {
+        warnings.push({
+          key,
+          message: `Optional environment variable ${key} is missing`,
         });
         continue;
       }
@@ -181,11 +204,32 @@ export class ProjectService {
           });
         }
       }
-
-      // string needs no validation — everything is a string
     }
 
-    return errors;
+    // Check for extra env and throw warning
+    for (const key of Object.keys(parsedEnv)) {
+      if (!schema[key]) {
+        warnings.push({
+          key,
+          message: `Extra environment variable ${key} found`,
+        });
+      }
+    }
+
+    // Return type based on pass or fail
+    if (errors.length === 0) {
+      return {
+        status: 'pass',
+        errors: [],
+        warnings,
+      };
+    } else {
+      return {
+        status: 'fail',
+        errors,
+        warnings,
+      };
+    }
   }
 
   public async validateEnv(project_id: string, env: string) {

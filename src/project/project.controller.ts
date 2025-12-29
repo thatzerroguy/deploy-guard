@@ -38,4 +38,15 @@ export class ProjectController {
       user_id,
     );
   }
+
+  @UseGuards(AuthGuard)
+  @Post('/:id/validate')
+  async validateEnv(
+    @Param('id') id: string,
+    @Body('env') env: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    const user_id = req.user.api_key;
+    return await this.projectService.validateEnv(id, env);
+  }
 }
