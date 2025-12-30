@@ -1,0 +1,50 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate environment with Deploy Guard
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          PORT: "3000"
+        run: |
+          echo "🔍 Validating environment variables..."
+
+          RESPONSE=$(curl -s -X POST https://api.deployguard.dev/validate \
+            -H "Content-Type: application/json" \
+            -d '{
+              "project_id": "PROJECT_ID",
+              "environment": "production",
+              "env": "DATABASE_URL='"$DATABASE_URL"'\nPORT='"$PORT"'"
+            }')
+
+          echo "Deploy Guard response:"
+          echo "$RESPONSE"
+
+          if echo "$RESPONSE" | grep -q '"status":"fail"'; then
+            echo "❌ Env validation failed"
+
+            echo "Errors:"
+            echo "$RESPONSE" | grep -o '"message":"[^"]*"' \
+              | sed 's/"message":"//g' \
+              | sed 's/"//g'
+
+            echo "Blocking deployment."
+            exit 1
+          fi
+
+          echo "Environment validation passed"
+
+      - name: Deploy
+        run: |
+          echo "Deployment would run here"

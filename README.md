@@ -1,4 +1,4 @@
-# Deploy Guard
+# Deploy Guard V1.0.0
 <hr>
 
 ## About Deploy Guard
